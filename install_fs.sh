@@ -6,7 +6,7 @@ export PATH
 install_path=/fs/
 
 
-# Make sure only root can run our script
+# Root 权限
 function rootness(){
     if [[ $EUID -ne 0 ]]; then
        echo "Error:This script must be run as root!" 1>&2
@@ -15,6 +15,22 @@ function rootness(){
 }
 
 
+#检测系统
+function checkos(){
+    if [ -f /etc/redhat-release ];then
+        OS='centos'
+    elif [ ! -z "`cat /etc/issue | grep bian`" ];then
+        OS='debian'
+    elif [ ! -z "`cat /etc/issue | grep Ubuntu`" ];then
+        OS='ubuntu'
+    else
+        echo "Not support OS, Please reinstall OS and retry! Centos debian and ubuntu are acceptable!"
+        exit 1
+    fi
+}
+
+
+#安装环境
 function checkenv(){
 		if [[ $OS = "centos" ]]; then
 			yum install epel-release -y
@@ -28,22 +44,7 @@ function checkenv(){
 			apt-get install -y openjdk-7-jre			
 		fi
 }
-
-
-
-function checkos(){
-    if [ -f /etc/redhat-release ];then
-        OS='centos'
-    elif [ ! -z "`cat /etc/issue | grep bian`" ];then
-        OS='debian'
-    elif [ ! -z "`cat /etc/issue | grep Ubuntu`" ];then
-        OS='ubuntu'
-    else
-        echo "Not support OS, Please reinstall OS and retry!"
-        exit 1
-    fi
-}
-
+ 
  
 #  Install finalspeed
 function install_finalspeed(){
@@ -52,9 +53,9 @@ function install_finalspeed(){
 	checkenv
 	mkdir -p $install_path
 	echo '' > ${install_path}"server.log"
-	wget --no-check-certificate https://raw.githubusercontent.com/91yun/finalspeed/master/fs1.2_server/fs.jar -O ${install_path}"fs.jar"
+	wget --no-check-certificate https://raw.githubusercontent.com/yu19930123/fs/master/fs1.2_server/fs.jar -O ${install_path}"fs.jar"
     if [ "$OS" == 'centos' ]; then
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/91yun/finalspeed/master/finalspeed -O /etc/init.d/finalspeed; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/yu19930123/fs/master/finalspeed -O /etc/init.d/finalspeed; then
 			echo "Failed to download finalspeed chkconfig file!"
 			exit 1
 		fi
@@ -62,7 +63,7 @@ function install_finalspeed(){
 		chkconfig --add finalspeed
 		chkconfig finalspeed on	  
 	else
-		if ! wget --no-check-certificate https://raw.githubusercontent.com/91yun/finalspeed/master/finalspeed-debian -O /etc/init.d/finalspeed; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/yu19930123/fs/master/finalspeed-debian -O /etc/init.d/finalspeed; then
 			echo "Failed to download finalspeed chkconfig file!"
 			exit 1
 		fi
@@ -98,17 +99,13 @@ function uninstall_finalspeed(){
 
 # Initialization step
 action=$1
-[ -z $1 ] && action=install
 case "$action" in
-install)
-    install_finalspeed
-    ;;
 uninstall)
     uninstall_finalspeed
     ;;
 *)
-    echo "Arguments error! [${action} ]"
-    echo "Usage: `basename $0` {install|uninstall}"
+    install_finalspeed
+   echo "参数uninstall可以卸载finalspeed"
     ;;
 esac
 
